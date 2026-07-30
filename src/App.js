@@ -1,25 +1,340 @@
-import logo from './logo.svg';
+import React, { useState, useEffect } from 'react';
+import { initSmartTrace } from './sdk';
 import './App.css';
 
-function App() {
+const CATEGORIES = ['All', 'Work', 'Personal', 'Health', 'Finance'];
+const PRIORITIES = ['high', 'medium', 'low'];
+
+// ─── API HELPERS ─────────────────────────────────────────────────────────────
+
+async function fetchTasks() {
+  const response = await fetch('/tasks');
+  return response.json();
+  // const data = await response.json();
+  // return data.priorityLevel;
+}
+
+async function createTask(task) {
+  const response = await fetch('/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(task),
+  });
+  return response.json();
+}
+
+async function updateTask(id, changes) {
+  const response = await fetch(`/tasks/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(changes),
+  });
+  return response.json();
+}
+
+async function deleteTask(id) {
+  await fetch(`/tasks/${id}`, { method: 'DELETE' });
+}
+
+// ─── TASK ITEM ────────────────────────────────────────────────────────────────
+
+function TaskItem({ task, onToggle, onDelete }) {
+  const today = new Date().toISOString().split('T')[0];
+  const isOverdue = !task.completed && task.dueDate < today;
+  const priorityLabel = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className={`task-item ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`}>
+      <div className="task-left">
+        <button className={`checkbox ${task.completed ? 'checked' : ''}`} onClick={() => onToggle(task)}>
+          {task.completed && '✓'}
+        </button>
+        <div className="task-info">
+          <span className="task-title">{task.title.trim()}</span>
+          <div className="task-meta">
+            <span className="category-tag">{task.category}</span>
+            {task.dueDate && (
+              <span className={`due-date ${isOverdue ? 'overdue-text' : ''}`}>
+                {isOverdue ? '⚠ Overdue · ' : '📅 '}
+                {new Date(task.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="task-right">
+        <span className={`priority-badge priority-${task.priority}`}>{priorityLabel}</span>
+        <button className="delete-btn" onClick={() => onDelete(task.id)}>✕</button>
+      </div>
     </div>
   );
 }
 
-export default App;
+// ─── ADD TASK FORM ────────────────────────────────────────────────────────────
+
+function AddTaskForm({ onAdd }) {
+  const [title, setTitle] = useState('');
+  const [category, setCategory] = useState('Work');
+  const [priority, setPriority] = useState('medium');
+  const [dueDate, setDueDate] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    await onAdd({ title: title.trim(), category, priority, dueDate, completed: false });
+    setTitle('');
+    setDueDate('');
+  };
+
+  return (
+    <form className="add-form" onSubmit={handleSubmit}>
+      <input
+        className="text-input"
+        type="text"
+        placeholder="Task title…"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+      />
+      <div className="form-row">
+        <select className="select-input" value={category} onChange={e => setCategory(e.target.value)}>
+          {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c}>{c}</option>)}
+        </select>
+        <select className="select-input" value={priority} onChange={e => setPriority(e.target.value)}>
+          {PRIORITIES.map(p => <option key={p}>{p}</option>)}
+        </select>
+      </div>
+      <input
+        className="date-input"
+        type="date"
+        value={dueDate}
+        onChange={e => setDueDate(e.target.value)}
+      />
+      <button className="btn-primary" type="submit">Add Task</button>
+    </form>
+  );
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────────────
+
+export default function App() {
+  initSmartTrace();
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [activePriority, setActivePriority] = useState('all');
+
+  useEffect(() => {
+    fetchTasks()
+      .then(data => { setTasks(data); setLoading(false); })
+      .catch(() => { setError('Could not connect to API. Is json-server running?'); setLoading(false); });
+  }, []);
+
+  const handleAdd = async (taskData) => {
+    const newTask = await createTask(taskData);
+    setTasks(prev => [newTask, ...prev]);
+  };
+
+  const handleToggle = async (task) => {
+    const updated = await updateTask(task.id, { completed: !task.completed });
+    setTasks(prev => prev.map(t => t.id === updated.id ? updated : t));
+  };
+
+  const handleDelete = async (id) => {
+    await deleteTask(id);
+    setTasks(prev => prev.filter(t => t.id !== id));
+  };
+
+  const today = new Date().toISOString().split('T')[0];
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.completed).length;
+  const overdueCount = tasks.filter(t => !t.completed && t.dueDate < today).length;
+  const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  // counts for sidebar nav
+  const activeCount = tasks.filter(t => !t.completed).length;
+  const completedCount = completed;
+
+  // sidebar category counts
+  const catCount = (cat) => tasks.filter(t => t.category === cat).length;
+
+  const filteredTasks = tasks
+    .filter(t => {
+      if (activeFilter === 'active') return !t.completed;
+      if (activeFilter === 'completed') return t.completed;
+      if (activeFilter === 'overdue') return !t.completed && t.dueDate < today;
+      return true;
+    })
+    .filter(t => activeCategory === 'All' || t.category === activeCategory)
+    .filter(t => activePriority === 'all' || t.priority === activePriority);
+
+  const filterLabel = {
+    all: 'All Tasks', active: 'Active', completed: 'Completed', overdue: 'Overdue'
+  };
+
+  if (loading) {
+    return (
+      <div className="app">
+        <header className="header"><div className="header-logo"><div className="check">✓</div> Todo List</div></header>
+        <div className="loading-state"><div className="loading-spinner" /><div className="loading-text">Loading tasks…</div></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="app">
+        <header className="header"><div className="header-logo"><div className="check">✓</div> Todo List</div></header>
+        <div className="error-state">
+          <div className="error-icon">⚠</div>
+          <div className="error-title">Could not load tasks</div>
+          <div className="error-msg">{error}</div>
+          <button className="btn-primary" style={{width:'auto',padding:'8px 20px',marginTop:4}} onClick={() => window.location.reload()}>Retry</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="app">
+
+      {/* ── HEADER ── */}
+      <header className="header">
+        <div className="header-logo">
+          <div className="check">✓</div>
+          Todo List
+        </div>
+
+        <div className="header-stats">
+          <div className="hstat total">
+            <span>{total}</span>
+            <span className="hstat-label">total</span>
+          </div>
+          <div className="hstat done">
+            <span>{completedCount}</span>
+            <span className="hstat-label">done</span>
+          </div>
+          {overdueCount > 0 && (
+            <div className="hstat overdue">
+              <span>{overdueCount}</span>
+              <span className="hstat-label">overdue</span>
+            </div>
+          )}
+        </div>
+
+        <div className="header-progress">
+          <div className="header-progress-bar">
+            <div className="header-progress-fill" style={{ width: `${progress}%` }} />
+          </div>
+          <span className="header-progress-pct">{progress}%</span>
+        </div>
+
+        <div className="header-date">
+          {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' })}
+        </div>
+      </header>
+
+      {/* ── BODY ── */}
+      <div className="body">
+
+        {/* LEFT PANEL */}
+        <aside className="left-panel">
+
+          {/* ADD TASK */}
+          <div className="panel-section">
+            <div className="panel-label">New Task</div>
+            <AddTaskForm onAdd={handleAdd} />
+          </div>
+
+          {/* STATUS FILTER */}
+          <div className="panel-section">
+            <div className="panel-label">Status</div>
+            <div className="nav-items">
+              {[
+                { key: 'all', icon: '📋', label: 'All Tasks', count: total },
+                { key: 'active', icon: '⚡', label: 'Active', count: activeCount },
+                { key: 'completed', icon: '✅', label: 'Completed', count: completedCount },
+                { key: 'overdue', icon: '🔥', label: 'Overdue', count: overdueCount },
+              ].map(item => (
+                <div
+                  key={item.key}
+                  className={`nav-item ${activeFilter === item.key ? 'active' : ''}`}
+                  onClick={() => { setActiveFilter(item.key); setActiveCategory('All'); }}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                  <span className="nav-count">{item.count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* CATEGORY FILTER */}
+          <div className="panel-section">
+            <div className="panel-label">Category</div>
+            <div className="nav-items">
+              {[
+                { key: 'All', icon: '🗂', label: 'All' },
+                { key: 'Work', icon: '💼', label: 'Work' },
+                { key: 'Personal', icon: '🏠', label: 'Personal' },
+                { key: 'Health', icon: '💪', label: 'Health' },
+                { key: 'Finance', icon: '💰', label: 'Finance' },
+              ].map(item => (
+                <div
+                  key={item.key}
+                  className={`nav-item ${activeCategory === item.key && activeFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => { setActiveCategory(item.key); setActiveFilter('all'); }}
+                >
+                  <span className="nav-icon">{item.icon}</span>
+                  {item.label}
+                  <span className="nav-count">{item.key === 'All' ? total : catCount(item.key)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </aside>
+
+        {/* RIGHT PANEL */}
+        <div className="right-panel">
+
+          {/* TOOLBAR */}
+          <div className="toolbar">
+            <span className="toolbar-title">
+              {filterLabel[activeFilter]}
+              <span className="toolbar-count">({filteredTasks.length})</span>
+            </span>
+            <div className="priority-tabs">
+              {['all', 'high', 'medium', 'low'].map(p => (
+                <button
+                  key={p}
+                  className={`priority-tab ${activePriority === p ? 'active' : ''}`}
+                  onClick={() => setActivePriority(p)}
+                >
+                  {p === 'all' ? 'All' : p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* SCROLLABLE TASK LIST */}
+          <div className="task-scroll">
+            {filteredTasks.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📭</div>
+                <div className="empty-title">No tasks here</div>
+                <div className="empty-sub">Add a task using the panel on the left</div>
+              </div>
+            ) : (
+              filteredTasks.map(task => (
+                <TaskItem key={task.id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
+              ))
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}

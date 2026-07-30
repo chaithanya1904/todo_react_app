@@ -1,0 +1,69 @@
+{
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Review Q4 financial report",
+      "category": "Work",
+      "priority": "high",
+      "completed": false,
+      "dueDate": "2026-07-18"
+    },
+    {
+      "id": "2",
+      "title": "Team standup preparation",
+      "category": "Work",
+      "priority": "medium",
+      "completed": false,
+      "dueDate": "2026-07-25"
+    },
+    {
+      "id": "3",
+      "title": "Morning run — 5km",
+      "category": "Health",
+      "priority": "medium",
+      "completed": false,
+      "dueDate": "2026-07-22"
+    },
+    {
+      "id": "4",
+      "title": "Book dentist appointment",
+      "category": "Health",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-07-30"
+    },
+    {
+      "id": "5",
+      "title": "Pay vendor invoices",
+      "category": "Finance",
+      "priority": "high",
+      "completed": false,
+      "dueDate": "2026-07-20"
+    },
+    {
+      "id": "6",
+      "title": "Grocery shopping",
+      "category": "Personal",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-07-24"
+    },
+    {
+      "id": "7",
+      "title": "Update project roadmap",
+      "category": "Work",
+      "priority": "high",
+      "completed": false,
+      "dueDate": "2026-07-19"
+    },
+    {
+      "id": "8",
+      "title": "Call insurance provider",
+      "category": "Personal",
+      "priority": "medium",
+      "completed": false,
+      "dueDate": "2026-07-28"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
+}
