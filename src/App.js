@@ -9,9 +9,9 @@ const PRIORITIES = ['high', 'medium', 'low'];
 
 async function fetchTasks() {
   const response = await fetch('/tasks');
-  return response.json();
-  // const data = await response.json();
-  // return data.priorityLevel;
+  //return response.json();
+  const data = await response.json();
+  return data;
 }
 
 async function createTask(task) {
@@ -41,7 +41,7 @@ async function deleteTask(id) {
 function TaskItem({ task, onToggle, onDelete }) {
   const today = new Date().toISOString().split('T')[0];
   const isOverdue = !task.completed && task.dueDate < today;
-  const priorityLabel = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
+  const priorityLabel = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : '';
 
   return (
     <div className={`task-item ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`}>
@@ -50,7 +50,7 @@ function TaskItem({ task, onToggle, onDelete }) {
           {task.completed && '✓'}
         </button>
         <div className="task-info">
-          <span className="task-title">{task.title.trim()}</span>
+          <span className="task-title">{task.title ? task.title.trim() : ''}</span>
           <div className="task-meta">
             <span className="category-tag">{task.category}</span>
             {task.dueDate && (
