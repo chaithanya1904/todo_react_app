@@ -1,69 +1,166 @@
 {
   "tasks": [
     {
-      "id": "1",
+      "id": 1,
+      "userId": "USR_001",
       "title": "Review Q4 financial report",
       "category": "Work",
       "priority": "high",
       "completed": false,
-      "dueDate": "2026-07-18"
+      "dueDate": "2026-08-18"
     },
     {
-      "id": "2",
+      "id": 2,
+      "userId": "USR_001",
       "title": "Team standup preparation",
       "category": "Work",
-      "priority": "medium",
+      "priority": null,
       "completed": false,
-      "dueDate": "2026-07-25"
+      "dueDate": "2026-08-20"
     },
     {
-      "id": "3",
-      "title": "Morning run — 5km",
-      "category": "Health",
-      "priority": "medium",
-      "completed": false,
-      "dueDate": "2026-07-22"
-    },
-    {
-      "id": "4",
-      "title": "Book dentist appointment",
-      "category": "Health",
-      "priority": "low",
-      "completed": false,
-      "dueDate": "2026-07-30"
-    },
-    {
-      "id": "5",
-      "title": "Pay vendor invoices",
-      "category": "Finance",
-      "priority": "high",
-      "completed": false,
-      "dueDate": "2026-07-20"
-    },
-    {
-      "id": "6",
-      "title": "Grocery shopping",
-      "category": "Personal",
-      "priority": "low",
-      "completed": false,
-      "dueDate": "2026-07-24"
-    },
-    {
-      "id": "7",
+      "id": 3,
+      "userId": "USR_001",
       "title": "Update project roadmap",
       "category": "Work",
       "priority": "high",
       "completed": false,
-      "dueDate": "2026-07-19"
+      "dueDate": "2026-08-19"
     },
     {
-      "id": "8",
+      "id": 4,
+      "userId": "USR_001",
+      "title": "Client presentation prep",
+      "category": "Work",
+      "priority": "medium",
+      "completed": true,
+      "dueDate": "2026-08-15"
+    },
+    {
+      "id": 5,
+      "userId": "USR_001",
+      "title": "Code review pending PRs",
+      "category": "Work",
+      "priority": "medium",
+      "completed": false,
+      "dueDate": "2026-08-22"
+    },
+    {
+      "id": 6,
+      "userId": "USR_001",
+      "title": "Weekly report submission",
+      "category": "Work",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-08-25"
+    },
+    {
+      "id": 7,
+      "userId": "USR_002",
+      "title": "Morning run 5km",
+      "category": "Health",
+      "priority": "medium",
+      "completed": true,
+      "dueDate": "2026-08-10"
+    },
+    {
+      "id": 8,
+      "userId": "USR_002",
+      "title": "Book dentist appointment",
+      "category": "Health",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-08-28"
+    },
+    {
+      "id": 9,
+      "userId": "USR_002",
+      "title": "Grocery shopping",
+      "category": "Personal",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-08-12"
+    },
+    {
+      "id": 10,
+      "userId": "USR_002",
       "title": "Call insurance provider",
       "category": "Personal",
       "priority": "medium",
       "completed": false,
-      "dueDate": "2026-07-28"
+      "dueDate": "2026-08-20"
+    },
+    {
+      "id": 11,
+      "userId": "USR_002",
+      "title": "Renew gym membership",
+      "category": "Health",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-08-30"
+    },
+    {
+      "id": 12,
+      "userId": "USR_002",
+      "title": "Plan weekend trip",
+      "category": "Personal",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-08-25"
+    },
+    {
+      "id": 13,
+      "userId": "USR_003",
+      "title": "Pay vendor invoices",
+      "category": "Finance",
+      "priority": "high",
+      "completed": false,
+      "dueDate": "2026-08-15"
+    },
+    {
+      "id": 14,
+      "userId": "USR_003",
+      "title": "Review monthly budget",
+      "category": "Finance",
+      "priority": "high",
+      "completed": false,
+      "dueDate": "2026-08-18"
+    },
+    {
+      "id": 15,
+      "userId": "USR_003",
+      "title": "Tax filing preparation",
+      "category": "Finance",
+      "priority": "high",
+      "completed": false,
+      "dueDate": "2026-08-20"
+    },
+    {
+      "id": 16,
+      "userId": "USR_003",
+      "title": "Investment portfolio review",
+      "category": "Finance",
+      "priority": "medium",
+      "completed": true,
+      "dueDate": "2026-08-10"
+    },
+    {
+      "id": 17,
+      "userId": "USR_003",
+      "title": "Expense report submission",
+      "category": "Finance",
+      "priority": "medium",
+      "completed": false,
+      "dueDate": "2026-08-22"
+    },
+    {
+      "id": 18,
+      "userId": "USR_003",
+      "title": "Bank statement reconciliation",
+      "category": "Finance",
+      "priority": "low",
+      "completed": false,
+      "dueDate": "2026-08-28"
     }
-  ],
-  "$schema": "./node_modules/json-server/schema.json"
+  ]
 }

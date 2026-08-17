@@ -1,17 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { initSmartTrace } from './sdk';
 import './App.css';
+import { initSmartTrace } from './sdk';
 
 const CATEGORIES = ['All', 'Work', 'Personal', 'Health', 'Finance'];
 const PRIORITIES = ['high', 'medium', 'low'];
 
+// ─── USERS ───────────────────────────────────────────────────────────────────
+const USERS = {
+  USR_001: { id: 'USR_001', name: 'John Smith',     initials: 'JS', color: '#3b82f6' },
+  USR_002: { id: 'USR_002', name: 'Priya Sharma',   initials: 'PS', color: '#8b5cf6' },
+  USR_003: { id: 'USR_003', name: 'Marcus Johnson', initials: 'MJ', color: '#10b981' },
+};
+
+// Read user from URL param
+// http://localhost:3000?user=USR_001
+function getUserFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const userId = params.get('user');
+  return USERS[userId] || USERS['USR_001'];
+}
+
 // ─── API HELPERS ─────────────────────────────────────────────────────────────
 
-async function fetchTasks() {
-  const response = await fetch('/tasks');
-  //return response.json();
-  const data = await response.json();
-  return data;
+async function fetchTasks(userId) {
+  const response = await fetch(`/tasks?userId=${userId}`);
+  return response.json();
 }
 
 async function createTask(task) {
@@ -41,7 +54,11 @@ async function deleteTask(id) {
 function TaskItem({ task, onToggle, onDelete }) {
   const today = new Date().toISOString().split('T')[0];
   const isOverdue = !task.completed && task.dueDate < today;
-  const priorityLabel = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : '';
+
+  // ✅ BUG-FREE: null check before calling .charAt()
+  const priorityLabel = task.priority
+    ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
+    : 'None';
 
   return (
     <div className={`task-item ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`}>
@@ -50,13 +67,16 @@ function TaskItem({ task, onToggle, onDelete }) {
           {task.completed && '✓'}
         </button>
         <div className="task-info">
-          <span className="task-title">{task.title ? task.title.trim() : ''}</span>
+          <span className="task-title">{task.title}</span>
           <div className="task-meta">
             <span className="category-tag">{task.category}</span>
             {task.dueDate && (
               <span className={`due-date ${isOverdue ? 'overdue-text' : ''}`}>
                 {isOverdue ? '⚠ Overdue · ' : '📅 '}
-                {new Date(task.dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {new Date(task.dueDate + 'T00:00:00').toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
               </span>
             )}
           </div>
@@ -117,7 +137,12 @@ function AddTaskForm({ onAdd }) {
 // ─── APP ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  initSmartTrace();
+  // Get user from URL param
+  const currentUser = getUserFromURL();
+
+  // Initialize SmartTrace SDK with current user
+  initSmartTrace({ userId: currentUser.id });
+
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -125,14 +150,15 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [activePriority, setActivePriority] = useState('all');
 
+  // Load tasks for current user only
   useEffect(() => {
-    fetchTasks()
+    fetchTasks(currentUser.id)
       .then(data => { setTasks(data); setLoading(false); })
       .catch(() => { setError('Could not connect to API. Is json-server running?'); setLoading(false); });
-  }, []);
+  }, [currentUser.id]);
 
   const handleAdd = async (taskData) => {
-    const newTask = await createTask(taskData);
+    const newTask = await createTask({ ...taskData, userId: currentUser.id });
     setTasks(prev => [newTask, ...prev]);
   };
 
@@ -151,12 +177,8 @@ export default function App() {
   const completed = tasks.filter(t => t.completed).length;
   const overdueCount = tasks.filter(t => !t.completed && t.dueDate < today).length;
   const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
-
-  // counts for sidebar nav
   const activeCount = tasks.filter(t => !t.completed).length;
   const completedCount = completed;
-
-  // sidebar category counts
   const catCount = (cat) => tasks.filter(t => t.category === cat).length;
 
   const filteredTasks = tasks
@@ -176,8 +198,16 @@ export default function App() {
   if (loading) {
     return (
       <div className="app">
-        <header className="header"><div className="header-logo"><div className="check">✓</div> Todo List</div></header>
-        <div className="loading-state"><div className="loading-spinner" /><div className="loading-text">Loading tasks…</div></div>
+        <header className="header">
+          <div className="header-logo"><div className="check">✓</div> Todo List</div>
+          <div className="user-indicator" style={{ background: currentUser.color }}>
+            {currentUser.initials}
+          </div>
+        </header>
+        <div className="loading-state">
+          <div className="loading-spinner" />
+          <div className="loading-text">Loading tasks for {currentUser.name}…</div>
+        </div>
       </div>
     );
   }
@@ -185,12 +215,23 @@ export default function App() {
   if (error) {
     return (
       <div className="app">
-        <header className="header"><div className="header-logo"><div className="check">✓</div> Todo List</div></header>
+        <header className="header">
+          <div className="header-logo"><div className="check">✓</div> Todo List</div>
+          <div className="user-indicator" style={{ background: currentUser.color }}>
+            {currentUser.initials}
+          </div>
+        </header>
         <div className="error-state">
           <div className="error-icon">⚠</div>
           <div className="error-title">Could not load tasks</div>
           <div className="error-msg">{error}</div>
-          <button className="btn-primary" style={{width:'auto',padding:'8px 20px',marginTop:4}} onClick={() => window.location.reload()}>Retry</button>
+          <button
+            className="btn-primary"
+            style={{ width: 'auto', padding: '8px 20px', marginTop: 4 }}
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -198,8 +239,6 @@ export default function App() {
 
   return (
     <div className="app">
-
-      {/* ── HEADER ── */}
       <header className="header">
         <div className="header-logo">
           <div className="check">✓</div>
@@ -233,29 +272,30 @@ export default function App() {
         <div className="header-date">
           {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric' })}
         </div>
+
+        {/* USER PILL */}
+        <div className="user-pill" style={{ background: currentUser.color }}>
+          <span className="user-pill-initials">{currentUser.initials}</span>
+          <span className="user-pill-id">{currentUser.id}</span>
+        </div>
       </header>
 
-      {/* ── BODY ── */}
       <div className="body">
-
-        {/* LEFT PANEL */}
         <aside className="left-panel">
 
-          {/* ADD TASK */}
           <div className="panel-section">
             <div className="panel-label">New Task</div>
             <AddTaskForm onAdd={handleAdd} />
           </div>
 
-          {/* STATUS FILTER */}
           <div className="panel-section">
             <div className="panel-label">Status</div>
             <div className="nav-items">
               {[
-                { key: 'all', icon: '📋', label: 'All Tasks', count: total },
-                { key: 'active', icon: '⚡', label: 'Active', count: activeCount },
-                { key: 'completed', icon: '✅', label: 'Completed', count: completedCount },
-                { key: 'overdue', icon: '🔥', label: 'Overdue', count: overdueCount },
+                { key: 'all',       icon: '📋', label: 'All Tasks',  count: total          },
+                { key: 'active',    icon: '⚡', label: 'Active',     count: activeCount    },
+                { key: 'completed', icon: '✅', label: 'Completed',  count: completedCount },
+                { key: 'overdue',   icon: '🔥', label: 'Overdue',    count: overdueCount   },
               ].map(item => (
                 <div
                   key={item.key}
@@ -270,16 +310,15 @@ export default function App() {
             </div>
           </div>
 
-          {/* CATEGORY FILTER */}
           <div className="panel-section">
             <div className="panel-label">Category</div>
             <div className="nav-items">
               {[
-                { key: 'All', icon: '🗂', label: 'All' },
-                { key: 'Work', icon: '💼', label: 'Work' },
-                { key: 'Personal', icon: '🏠', label: 'Personal' },
-                { key: 'Health', icon: '💪', label: 'Health' },
-                { key: 'Finance', icon: '💰', label: 'Finance' },
+                { key: 'All',      icon: '🗂',  label: 'All'      },
+                { key: 'Work',     icon: '💼',  label: 'Work'     },
+                { key: 'Personal', icon: '🏠',  label: 'Personal' },
+                { key: 'Health',   icon: '💪',  label: 'Health'   },
+                { key: 'Finance',  icon: '💰',  label: 'Finance'  },
               ].map(item => (
                 <div
                   key={item.key}
@@ -294,12 +333,40 @@ export default function App() {
             </div>
           </div>
 
+          {/* USER INFO */}
+          <div className="panel-section user-section">
+            <div className="panel-label">Logged In As</div>
+            <div className="sidebar-user">
+              <div className="sidebar-user-avatar" style={{ background: currentUser.color }}>
+                {currentUser.initials}
+              </div>
+              <div className="sidebar-user-info">
+                <div className="sidebar-user-name">{currentUser.name}</div>
+                <div className="sidebar-user-id">{currentUser.id}</div>
+              </div>
+            </div>
+            <div className="switch-user-links">
+              <div className="switch-label">Switch User:</div>
+              <div className="switch-links">
+                {Object.values(USERS).map(user => (
+                  <a
+                    key={user.id}
+                    href={`?user=${user.id}`}
+                    className={`switch-link ${currentUser.id === user.id ? 'active-link' : ''}`}
+                    style={{ background: currentUser.id === user.id ? user.color : '' }}
+                    title={user.name}
+                  >
+                    {user.initials}
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+
         </aside>
 
-        {/* RIGHT PANEL */}
         <div className="right-panel">
 
-          {/* TOOLBAR */}
           <div className="toolbar">
             <span className="toolbar-title">
               {filterLabel[activeFilter]}
@@ -318,7 +385,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* SCROLLABLE TASK LIST */}
           <div className="task-scroll">
             {filteredTasks.length === 0 ? (
               <div className="empty-state">
@@ -328,7 +394,12 @@ export default function App() {
               </div>
             ) : (
               filteredTasks.map(task => (
-                <TaskItem key={task.id} task={task} onToggle={handleToggle} onDelete={handleDelete} />
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  onToggle={handleToggle}
+                  onDelete={handleDelete}
+                />
               ))
             )}
           </div>

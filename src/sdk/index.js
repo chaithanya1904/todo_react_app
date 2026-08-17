@@ -1,41 +1,38 @@
 // ─── SMARTTRACE SDK ───────────────────────────────────────────────────────────
 //
-// Main entry point for the SmartTrace SDK
+// Usage:
 //
-// Two things need to happen to use the SDK:
-//
-// 1. In src/index.js — wrap the entire app with ErrorBoundary:
-//
-//    import SmartTraceErrorBoundary from './smarttrace-sdk';
-//
+// 1. In src/index.js:
+//    import SmartTraceErrorBoundary from './sdk';
 //    root.render(
 //      <SmartTraceErrorBoundary>
 //        <App />
 //      </SmartTraceErrorBoundary>
 //    );
 //
-// 2. In src/App.js — initialize the API interceptor at the top:
-//
-//    import { initSmartTrace } from './smarttrace-sdk';
-//    initSmartTrace();
-//
-// That is all. SDK is now active and monitoring the app.
+// 2. In src/App.js:
+//    import { initSmartTrace } from './sdk';
+//    initSmartTrace({ userId: currentUser.id });
 // ─────────────────────────────────────────────────────────────────────────────
 
 import SmartTraceErrorBoundary from './errorBoundary';
 import { initApiInterceptor } from './apiInterceptor';
+import { setCurrentUserId } from './collector';
 
-// ── INIT SMARTTRACE ───────────────────────────────────────────────────────────
-// Call this once at the top of App.js
-// Starts the API interceptor
-
-export function initSmartTrace() {
+export function initSmartTrace(config = {}) {
   console.log('[SmartTrace SDK] Initializing...');
+
+  // Set current user ID
+  if (config.userId) {
+    setCurrentUserId(config.userId);
+    console.log(`[SmartTrace SDK] User: ${config.userId}`);
+  }
+
+  // Start API interceptor
   initApiInterceptor();
+
   console.log('[SmartTrace SDK] Ready — monitoring errors');
 }
-
-// ── EXPORTS ───────────────────────────────────────────────────────────────────
 
 export { SmartTraceErrorBoundary };
 export default SmartTraceErrorBoundary;
