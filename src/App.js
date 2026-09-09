@@ -55,10 +55,8 @@ function TaskItem({ task, onToggle, onDelete }) {
   const today = new Date().toISOString().split('T')[0];
   const isOverdue = !task.completed && task.dueDate < today;
 
-  // ✅ BUG-FREE: null check before calling .charAt()
-  const priorityLabel = task.priority
-    ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1)
-    : 'None';
+ 
+  const priorityLabel = task.priority ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1) : '';
 
   return (
     <div className={`task-item ${task.completed ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}`}>
@@ -67,7 +65,7 @@ function TaskItem({ task, onToggle, onDelete }) {
           {task.completed && '✓'}
         </button>
         <div className="task-info">
-          <span className="task-title">{task.title}</span>
+          <span className="task-title">{task.title.trim()}</span>
           <div className="task-meta">
             <span className="category-tag">{task.category}</span>
             {task.dueDate && (
