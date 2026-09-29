@@ -51,7 +51,7 @@ async function deleteTask(id) {
 
 // ─── TASK ITEM ────────────────────────────────────────────────────────────────
 
-function TaskItem({ task, onToggle, onDelete }) {
+function TaskItem({ task, onToggle, onDelete }) { 
   const today = new Date().toISOString().split('T')[0];
   const isOverdue = !task.completed && task.dueDate < today;
 
